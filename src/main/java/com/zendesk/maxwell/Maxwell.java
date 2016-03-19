@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.concurrent.TimeoutException;
+import java.util.Properties;
 import com.djdch.log4j.StaticShutdownCallbackRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +20,7 @@ public class Maxwell {
 	private Schema schema;
 	private MaxwellConfig config;
 	private MaxwellContext context;
+  private Properties property;
 	static final Logger LOGGER = LoggerFactory.getLogger(Maxwell.class);
 
 	private void initFirstRun(Connection connection, Connection schemaConnection) throws SQLException, IOException, InvalidSchemaError {
@@ -33,6 +35,17 @@ public class Maxwell {
 		store.save();
 
 		this.context.setPosition(pos);
+
+    this.property = new Properties();
+    InputStream input = null;
+    try {
+      input = new FileInputStream(this.config.propertyPath);
+      this.property.load(input);
+      if (this.property.getProperty("filters.use_column_filter") == false)
+        this.property = null;
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
 	}
 
 	private void run(String[] argv) throws Exception {

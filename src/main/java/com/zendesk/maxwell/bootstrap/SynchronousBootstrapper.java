@@ -53,13 +53,7 @@ public class SynchronousBootstrapper extends AbstractBootstrapper {
 			ResultSet resultSet = getAllRows(databaseName, tableName, schema, connection);
 			int insertedRows = 0;
 			while ( resultSet.next() ) {
-				RowMap row = new RowMap(
-						"bootstrap-insert",
-						databaseName,
-						tableName,
-						System.currentTimeMillis() / 1000,
-						table.getPKList(),
-						position);
+        RowMap row = bootstrapEventRowMap("bootstrap-insert", table, position);
 				setRowValues(row, resultSet, table);
 
 				if ( LOGGER.isDebugEnabled() )
@@ -104,15 +98,24 @@ public class SynchronousBootstrapper extends AbstractBootstrapper {
 		return bootstrapEventRowMap("bootstrap-complete", table, position);
 	}
 
-	private RowMap bootstrapEventRowMap(String type, Table table, BinlogPosition position) {
-		return new RowMap(
-				type,
-				table.getDatabase(),
-				table.getName(),
-				System.currentTimeMillis() / 1000,
-				table.getPKList(),
-				position);
-	}
+  private RowMap bootstrapEventRowMap(String type, Table table, BinlogPosition position) {
+    if (this.property)
+      return new RowMap(
+          type,
+          table.getDatabase(),
+          table.getName(),
+          System.currentTimeMillis() / 1000,
+          table.getPKList(),
+          position, this.property);
+    else
+      return new RowMap(
+          type,
+          table.getDatabase(),
+          table.getName(),
+          System.currentTimeMillis() / 1000,
+          table.getPKList(),
+          position);
+  }
 
 	@Override
 	public void completeBootstrap(RowMap completeBootstrapRow, AbstractProducer producer, MaxwellReplicator replicator) throws Exception {

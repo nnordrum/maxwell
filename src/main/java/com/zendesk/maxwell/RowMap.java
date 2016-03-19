@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.Properties;
 
 public class RowMap implements Serializable {
 	static final Logger LOGGER = LoggerFactory.getLogger(RowMap.class);
@@ -55,7 +56,15 @@ public class RowMap implements Serializable {
 				}
 			};
 
-	public RowMap(String type, String database, String table, Long timestamp, List<String> pkColumns, BinlogPosition nextPosition) {
+
+	public RowMap(String type, String database, String table, Long timestamp,
+                List<String> pkColumns, BinlogPosition nextPosition, Properties prop) {
+    RowMap(type, database, table, timestamp, pkColumns, nextPosition);
+    if (prop) filterColumns(prop);
+  }
+
+	public RowMap(String type, String database, String table, Long timestamp,
+                List<String> pkColumns, BinlogPosition nextPosition) {
 		this.rowType = type;
 		this.database = database;
 		this.table = table;
@@ -175,9 +184,16 @@ public class RowMap implements Serializable {
 	public Object getData(String key) {
 		return this.data.get(key);
 	}
-	public Object removeData(String key) {
-	    return this.data.remove(key);
-	}
+
+  private void filterColumns(Properties prop) {
+    String table = prop.getProperty("filters.table");
+    String[] columns = prop.getProperty(String.format("filters.%s.columns", table));
+
+    for(String column : columns) {
+      this.data.remove(column);
+      if (this.oldData) this.oldData.remove(column);
+    }
+  }
 
 	public void putData(String key, Object value) {
 		this.data.put(key,  value);
@@ -190,11 +206,6 @@ public class RowMap implements Serializable {
 	public void putOldData(String key, Object value) {
 		this.oldData.put(key,  value);
 	}
-	public void removeOldData(String key) {
-	    if(this.oldData!=null){
-	        this.oldData.remove(key);
-	    }
-    }
 
 	public BinlogPosition getPosition() {
 		return nextPosition;

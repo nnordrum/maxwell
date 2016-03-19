@@ -11,6 +11,7 @@ import java.sql.SQLException;
 public abstract class AbstractBootstrapper {
 
 	protected MaxwellContext context;
+  private final Properties property;
 
 	public AbstractBootstrapper(MaxwellContext context) { this.context = context; }
 
@@ -20,6 +21,10 @@ public abstract class AbstractBootstrapper {
 			row.getData("completed_at") == null &&
 			( long ) row.getData("is_complete") == 0;
 	}
+
+  public void setProperties(Properties prop) {
+    this.property = prop;
+  }
 
 	public boolean isCompleteBootstrapRow(RowMap row) {
 		return isBootstrapRow(row) &&

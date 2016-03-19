@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 public abstract class MaxwellAbstractRowsEvent extends AbstractRowEvent {
 	static final Logger LOGGER = LoggerFactory.getLogger(MaxwellAbstractRowsEvent.class);
 	private final AbstractRowEvent event;
+  private final Properties property;
 
 	protected final Table table;
 	protected final String database;
@@ -36,6 +37,10 @@ public abstract class MaxwellAbstractRowsEvent extends AbstractRowEvent {
 		this.database = table.getDatabase();
 		this.filter = f;
 	}
+
+  public void setProperty(Properties property) {
+    this.property = property;
+  }
 
 	@Override
 	public BinlogEventV4Header getHeader() {
@@ -177,13 +182,24 @@ public abstract class MaxwellAbstractRowsEvent extends AbstractRowEvent {
 	}
 
 
+  protected RowMap buildRowMapWithProperties(Properties prop) {
+		return new RowMap(
+				getType(),
+				this.database,
+				getTable().getName(),
+				getHeader().getTimestamp() / 1000,
+				table.getPKList(),
+				this.getNextBinlogPosition(),
+        prop);
+  }
+
 	public List<RowMap> jsonMaps() {
 		ArrayList<RowMap> list = new ArrayList<>();
 
 		for ( Iterator<Row> ri = filteredRows().iterator() ; ri.hasNext(); ) {
 			Row r = ri.next();
 
-			RowMap rowMap = buildRowMap();
+      RowMap rowMap = (this.property) ? buildRowMapWithProperties(this.property) : buildRowMap();
 
 			for ( ColumnWithDefinition cd : new ColumnWithDefinitionList(table, r, getUsedColumns()) )
 				rowMap.putData(cd.definition.getName(), cd.asJSON());
